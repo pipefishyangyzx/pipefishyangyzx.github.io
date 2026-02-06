@@ -1004,7 +1004,7 @@ a:hover {
 
 .map-background {
     position: relative;
-    min-height: 400px;
+    min-height: 500px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1284,7 +1284,7 @@ a:hover {
 
 .hero-right .map-canvas {
     width: 100%;
-    min-height: 320px;
+    min-height: 480px;
     border-radius: 12px;
     overflow: hidden;
     background: linear-gradient(180deg,#052233,#04202a);
