@@ -127,6 +127,25 @@ http-server -p 8000
 
 ## 🔧 功能说明
 
+### 高德地图 Key 配置（安全建议）
+
+本项目使用高德 JavaScript SDK 进行前端地图展示与地址解析。
+
+不要将真实的 Key 提交到公开仓库。推荐做法：
+
+- 在本地或 CI 中使用环境变量注入真实 Key，开发仓库中保留 `.env.example` 示例文件。
+- 在高德控制台创建 **JavaScript API（浏览器）** 类型的 Key，并在 **Referer 白名单** 中添加您站点的域名（例如：`https://pipefishyangyzx.github.io`）以及本地测试地址（例如：`http://localhost:8000`）。
+- 在 `index.html` 中脚本标签使用占位 `YOUR_AMAP_KEY`，并在部署流程（CI 或服务器）中替换为真实 Key。
+
+示例：在 `.env` 中配置：
+
+```
+AMAP_JS_KEY=your_real_key_here
+```
+
+在 CI/CD 中注入该变量或在部署脚本中替换占位符。
+
+
 ### JavaScript功能
 - **汉堡菜单**：移动设备的响应式导航菜单
 - **导航高亮**：根据当前页面自动高亮导航项
