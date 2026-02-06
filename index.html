@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+https://pipefishyangyzx.github.io<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -30,13 +30,28 @@
     </nav>
 
     <!-- 英雄区域 -->
-    <section class="hero">
-        <div class="hero-content">
-            <h2>数字未来从这里开始</h2>
-            <p>丰图科技为企业提供领先的数字化转型解决方案</p>
-            <div class="hero-buttons">
-                <a href="products.html" class="btn btn-primary">了解产品</a>
-                <a href="contact.html" class="btn btn-secondary">联系我们</a>
+    <!-- 英雄区域 + 地图搜索 -->
+    <section class="hero hero-map">
+        <div class="container hero-inner">
+            <div class="hero-left">
+                <h1>丰图科技 · 智慧地图与位置服务</h1>
+                <p>结合AI与GIS能力，为企业提供位置智能、实时分析与可视化服务。</p>
+
+                <div class="map-search">
+                    <input id="mapSearchInput" type="text" placeholder="输入地址 / 城市 / 地标，例如：中关村" />
+                    <button id="mapSearchBtn" class="btn btn-primary">搜索</button>
+                </div>
+
+                <div class="hero-ctas">
+                    <a href="products.html" class="btn btn-outline">查看产品</a>
+                    <a href="contact.html" class="btn btn-primary">联系我们</a>
+                </div>
+            </div>
+
+            <div class="hero-right">
+                <div id="mapCanvas" class="map-canvas">
+                    <div class="map-placeholder">地图占位（集成第三方地图或GIS可替换）</div>
+                </div>
             </div>
         </div>
     </section>

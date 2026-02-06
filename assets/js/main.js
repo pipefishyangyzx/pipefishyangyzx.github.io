@@ -295,3 +295,55 @@ document.addEventListener('DOMContentLoaded', setupMapInteractions);
 // 日志
 console.log('丰图科技官方网站已加载');
 console.log('AI数据中心已启动 🤖');
+
+// 地图搜索 - 简单模拟交互（占位实现）
+document.addEventListener('DOMContentLoaded', function() {
+    const searchBtn = document.getElementById('mapSearchBtn');
+    const searchInput = document.getElementById('mapSearchInput');
+    const mapCanvas = document.getElementById('mapCanvas');
+
+    if (!mapCanvas) return;
+
+    function clearMarkers() {
+        const markers = mapCanvas.querySelectorAll('.map-marker');
+        markers.forEach(m => m.remove());
+    }
+
+    function showToast(text, timeout = 2500) {
+        let t = mapCanvas.querySelector('.map-toast');
+        if (!t) {
+            t = document.createElement('div');
+            t.className = 'map-toast';
+            mapCanvas.appendChild(t);
+        }
+        t.textContent = text;
+        t.style.opacity = '1';
+        setTimeout(() => { t.style.opacity = '0'; }, timeout);
+    }
+
+    function placeMarker(xPct, yPct) {
+        const marker = document.createElement('div');
+        marker.className = 'map-marker';
+        marker.style.left = xPct + '%';
+        marker.style.top = yPct + '%';
+        mapCanvas.appendChild(marker);
+        setTimeout(() => marker.classList.add('pop'), 20);
+    }
+
+    if (searchBtn && searchInput) {
+        searchBtn.addEventListener('click', () => {
+            const q = searchInput.value.trim();
+            if (!q) {
+                showToast('请输入搜索关键词');
+                return;
+            }
+            clearMarkers();
+            // 简单随机模拟若干标注位置
+            const results = [ [30,40], [55,25], [70,60] ];
+            results.forEach((pos, i) => {
+                setTimeout(() => placeMarker(pos[0], pos[1]), i * 200);
+            });
+            showToast('找到 ' + results.length + ' 条结果：' + q);
+        });
+    }
+});
