@@ -6,8 +6,8 @@
     <meta name="description" content="丰图科技 - 领先的数字化解决方案提供商">
     <title>丰图科技 - 数字未来从这里开始</title>
     <link rel="stylesheet" href="assets/css/style.css">
-    <!-- 将高德 JavaScript API Key 放在 meta 中，便于在部署时替换或通过 CI 注入 -->
-    <meta name="amap-js-key" content="e4cb54a0cb561865766ed1b5c21b909f">
+    <!-- 将百度地图 JavaScript API Key 放在 meta 中，便于在部署时替换或通过 CI 注入 -->
+    <meta name="baidu-map-key" content="YOUR_BAIDU_MAP_KEY">
 </head>
 <body>
     <!-- 导航栏 -->
@@ -310,26 +310,26 @@
         </div>
     </footer>
 
-    <!-- 异步加载高德地图 SDK：从 meta[name="amap-js-key"] 读取 key（保持仓库中为占位符） -->
+    <!-- 异步加载百度地图 SDK：从 meta[name="baidu-map-key"] 读取 key（保持仓库中为占位符） -->
     <script>
     (function(){
         try {
-            var meta = document.querySelector('meta[name="amap-js-key"]');
-            var key = (meta && meta.content) ? meta.content.trim() : 'YOUR_AMAP_KEY';
+            var meta = document.querySelector('meta[name="baidu-map-key"]');
+            var key = (meta && meta.content) ? meta.content.trim() : 'YOUR_BAIDU_MAP_KEY';
             var s = document.createElement('script');
             s.async = true;
-            s.src = 'https://webapi.amap.com/maps?v=2.0&key=' + encodeURIComponent(key) + '&plugin=AMap.Geocoder';
+            s.src = 'https://api.map.baidu.com/api?v=2.0&ak=' + encodeURIComponent(key) + '&s=1';
             s.onload = function(){
-                if (window._initAMapIfAvailable) {
-                    window._initAMapIfAvailable();
+                if (window._initBaiduMapIfAvailable) {
+                    window._initBaiduMapIfAvailable();
                 }
             };
             s.onerror = function(){
-                console.warn('AMap SDK 加载失败，请检查网络或 Key 配置。');
+                console.warn('百度地图 SDK 加载失败，请检查网络或 Key 配置。');
             };
             document.head.appendChild(s);
         } catch (e) {
-            console.warn('AMap 异步加载脚本出错', e);
+            console.warn('百度地图异步加载脚本出错', e);
         }
     })();
     </script>

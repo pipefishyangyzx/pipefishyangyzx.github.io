@@ -358,8 +358,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!mapCanvas) return;
 
     // AMap 对象引用（如果可用）
-    let amapMap = null;
-    let amapMarker = null;
+    let baiduMap = null;
+    let baiduMarker = null;
 
     function clearDOMMarkers() {
         const markers = mapCanvas.querySelectorAll('.map-marker');
@@ -388,13 +388,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function placeAMarker(lng, lat) {
-        if (amapMap) {
-            if (amapMarker) amapMarker.setMap(null);
-            amapMarker = new AMap.Marker({
-                position: [lng, lat],
-                map: amapMap
-            });
-            amapMap.setZoomAndCenter(14, [lng, lat]);
+        if (baiduMap) {
+            if (baiduMarker) baiduMap.removeOverlay(baiduMarker);
+            var point = new BMap.Point(lng, lat);
+            baiduMarker = new BMap.Marker(point);
+            baiduMap.addOverlay(baiduMarker);
+            baiduMap.centerAndZoom(point, 14);
         } else {
             // fallback: place DOM marker near center
             clearDOMMarkers();
@@ -402,66 +401,60 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // 初始化高德地图（如果 SDK 已加载）
-    function initAMapIfAvailable() {
+    // 初始化百度地图（如果 SDK 已加载）
+    function initBaiduMapIfAvailable() {
         try {
-            if (window.AMap) {
+            if (window.BMap) {
                 // 如果已经初始化过则跳过
-                if (!amapMap) {
-                    amapMap = new AMap.Map('mapCanvas', {
-                        center: [116.397428, 39.90923],
-                        zoom: 11,
-                        viewMode: '2D'
+                if (!baiduMap) {
+                    baiduMap = new BMap.Map('mapCanvas', {
+                        center: new BMap.Point(116.404, 39.915),
+                        zoom: 11
                     });
-                    console.log('AMap 初始化完成');
+                    console.log('百度地图初始化完成');
                 }
             } else {
-                // 若 AMap 未加载，稍后重试
-                console.log('AMap 未就绪，等待加载...');
+                // 若 BMap 未加载，稍后重试
+                console.log('百度地图未就绪，等待加载...');
                 const retry = setInterval(() => {
-                    if (window.AMap) {
+                    if (window.BMap) {
                         clearInterval(retry);
                         try {
-                            amapMap = new AMap.Map('mapCanvas', {
-                                center: [116.397428, 39.90923],
-                                zoom: 11,
-                                viewMode: '2D'
+                            baiduMap = new BMap.Map('mapCanvas', {
+                                center: new BMap.Point(116.404, 39.915),
+                                zoom: 11
                             });
-                            console.log('AMap 延迟初始化完成');
+                            console.log('百度地图延迟初始化完成');
                         } catch (err) {
-                            console.warn('AMap 延迟初始化失败', err);
+                            console.warn('百度地图延迟初始化失败', err);
                         }
                     }
                 }, 300);
             }
         } catch (e) {
-            console.warn('AMap init failed or not available', e);
+            console.warn('百度地图 init failed or not available', e);
         }
     }
 
-    initAMapIfAvailable();
+    initBaiduMapIfAvailable();
 
-    // 使用高德地理编码查询地址并标注
+    // 使用百度地理编码查询地址并标注
     function geocodeQuery(query) {
         if (!query) { showToast('请输入搜索关键词'); return; }
 
-        if (window.AMap && amapMap) {
-            // 使用 AMap.plugin 确保 Geocoder 可用
+        if (window.BMap && baiduMap) {
             try {
-                AMap.plugin('AMap.Geocoder', function() {
-                    const geocoder = new AMap.Geocoder({ city: '全国' });
-                    geocoder.getLocation(query, function(status, result) {
-                        if (status === 'complete' && result.geocodes && result.geocodes.length) {
-                            const loc = result.geocodes[0].location;
-                            placeAMarker(loc.lng, loc.lat);
-                            showToast('找到 ' + result.geocodes.length + ' 条结果：' + query);
-                        } else {
-                            showToast('未找到地址，请尝试更精确关键词');
-                        }
-                    });
-                });
+                var geocoder = new BMap.Geocoder();
+                geocoder.getPoint(query, function(point) {
+                    if (point) {
+                        placeAMarker(point.lng, point.lat);
+                        showToast('找到地址：' + query);
+                    } else {
+                        showToast('未找到地址，请尝试更精确关键词');
+                    }
+                }, '全国');
             } catch (err) {
-                console.warn('Geocoder 调用失败，回退至DOM占位', err);
+                console.warn('百度地图 Geocoder 调用失败，回退至DOM占位', err);
                 // 回退到DOM标注
                 clearDOMMarkers();
                 const results = [ [40,45], [60,30], [72,62] ];
@@ -492,5 +485,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // 允许外部调用初始化（例如脚本异步加载后）
-    window._initAMapIfAvailable = initAMapIfAvailable;
+    window._initBaiduMapIfAvailable = initBaiduMapIfAvailable;
 });
