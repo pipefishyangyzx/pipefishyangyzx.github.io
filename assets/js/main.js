@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// 地图搜索 - 简单模拟交互（占位实现）
+// 地图搜索 — 使用高德地图（若未配置Key则回退到页面占位模拟）
 document.addEventListener('DOMContentLoaded', function() {
     const searchBtn = document.getElementById('mapSearchBtn');
     const searchInput = document.getElementById('mapSearchInput');
@@ -357,7 +357,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!mapCanvas) return;
 
-    function clearMarkers() {
+    // AMap 对象引用（如果可用）
+    let amapMap = null;
+    let amapMarker = null;
+
+    function clearDOMMarkers() {
         const markers = mapCanvas.querySelectorAll('.map-marker');
         markers.forEach(m => m.remove());
     }
@@ -374,7 +378,7 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => { t.style.opacity = '0'; }, timeout);
     }
 
-    function placeMarker(xPct, yPct) {
+    function placeDOMMarker(xPct, yPct) {
         const marker = document.createElement('div');
         marker.className = 'map-marker';
         marker.style.left = xPct + '%';
@@ -383,20 +387,76 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => marker.classList.add('pop'), 20);
     }
 
+    function placeAMarker(lng, lat) {
+        if (amapMap) {
+            if (amapMarker) amapMarker.setMap(null);
+            amapMarker = new AMap.Marker({
+                position: [lng, lat],
+                map: amapMap
+            });
+            amapMap.setZoomAndCenter(14, [lng, lat]);
+        } else {
+            // fallback: place DOM marker near center
+            clearDOMMarkers();
+            placeDOMMarker(50, 50);
+        }
+    }
+
+    // 初始化高德地图（如果 SDK 已加载）
+    function initAMapIfAvailable() {
+        try {
+            if (window.AMap) {
+                amapMap = new AMap.Map('mapCanvas', {
+                    center: [116.397428, 39.90923],
+                    zoom: 11,
+                    viewMode: '2D'
+                });
+            }
+        } catch (e) {
+            console.warn('AMap init failed or not available', e);
+        }
+    }
+
+    initAMapIfAvailable();
+
+    // 使用高德地理编码查询地址并标注
+    function geocodeQuery(query) {
+        if (!query) { showToast('请输入搜索关键词'); return; }
+
+        if (window.AMap && amapMap) {
+            const geocoder = new AMap.Geocoder({ city: '全国' });
+            geocoder.getLocation(query, function(status, result) {
+                if (status === 'complete' && result.geocodes && result.geocodes.length) {
+                    const loc = result.geocodes[0].location;
+                    placeAMarker(loc.lng, loc.lat);
+                    showToast('找到 ' + result.geocodes.length + ' 条结果：' + query);
+                } else {
+                    showToast('未找到地址，请尝试更精确关键词');
+                }
+            });
+        } else {
+            // 回退：模拟位置标注
+            clearDOMMarkers();
+            const results = [ [40,45], [60,30], [72,62] ];
+            results.forEach((pos, i) => setTimeout(() => placeDOMMarker(pos[0], pos[1]), i * 200));
+            showToast('（模拟）找到 ' + results.length + ' 条结果：' + query);
+        }
+    }
+
     if (searchBtn && searchInput) {
         searchBtn.addEventListener('click', () => {
             const q = searchInput.value.trim();
-            if (!q) {
-                showToast('请输入搜索关键词');
-                return;
+            geocodeQuery(q);
+        });
+        // 支持回车
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const q = searchInput.value.trim();
+                geocodeQuery(q);
             }
-            clearMarkers();
-            // 简单随机模拟若干标注位置
-            const results = [ [30,40], [55,25], [70,60] ];
-            results.forEach((pos, i) => {
-                setTimeout(() => placeMarker(pos[0], pos[1]), i * 200);
-            });
-            showToast('找到 ' + results.length + ' 条结果：' + q);
         });
     }
+
+    // 允许外部调用初始化（例如脚本异步加载后）
+    window._initAMapIfAvailable = initAMapIfAvailable;
 });
