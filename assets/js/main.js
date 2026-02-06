@@ -441,40 +441,81 @@ document.addEventListener('DOMContentLoaded', function() {
 
     initAMapIfAvailable();
 
-    // 使用高德地理编码查询地址并标注
+    // 使用地理编码查询地址并标注：优先尝试本地代理 (/api/geocode)，失败回退到 AMap JS SDK
     function geocodeQuery(query) {
         if (!query) { showToast('请输入搜索关键词'); return; }
 
-        if (window.AMap && amapMap) {
-            // 使用 AMap.plugin 确保 Geocoder 可用
+        const tryProxyThenAmap = async () => {
+            // 尝试调用相对路径代理（适用于在本地或已部署带代理的环境）
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 3000);
             try {
-                AMap.plugin('AMap.Geocoder', function() {
-                    const geocoder = new AMap.Geocoder({ city: '全国' });
-                    geocoder.getLocation(query, function(status, result) {
-                        if (status === 'complete' && result.geocodes && result.geocodes.length) {
-                            const loc = result.geocodes[0].location;
+                const proxyResp = await fetch('/api/geocode?address=' + encodeURIComponent(query), { signal: controller.signal });
+                clearTimeout(timer);
+                if (proxyResp.ok) {
+                    const text = await proxyResp.text();
+                    // 代理直接转发高德 REST 的 JSON 字符串
+                    let data;
+                    try { data = JSON.parse(text); } catch (e) { data = null; }
+                    if (data && data.status === '1' && data.geocodes && data.geocodes.length) {
+                        const loc = data.geocodes[0].location || '';
+                        // REST 返回 location 为 "lng,lat" 字符串
+                        if (typeof loc === 'string') {
+                            const parts = loc.split(',');
+                            if (parts.length === 2) {
+                                const lng = parseFloat(parts[0]);
+                                const lat = parseFloat(parts[1]);
+                                placeAMarker(lng, lat);
+                                showToast('代理：找到 ' + data.geocodes.length + ' 条结果：' + query);
+                                return;
+                            }
+                        } else if (loc.lng && loc.lat) {
                             placeAMarker(loc.lng, loc.lat);
-                            showToast('找到 ' + result.geocodes.length + ' 条结果：' + query);
-                        } else {
-                            showToast('未找到地址，请尝试更精确关键词');
+                            showToast('代理：找到 ' + data.geocodes.length + ' 条结果：' + query);
+                            return;
                         }
-                    });
-                });
+                    }
+                    // 若代理返回非预期内容，则继续回退
+                    console.warn('代理返回非预期 geocode 响应，回退到 AMap JS');
+                }
             } catch (err) {
-                console.warn('Geocoder 调用失败，回退至DOM占位', err);
-                // 回退到DOM标注
+                console.warn('调用代理失败或超时，回退到 AMap JS', err && err.name ? err.name : err);
+            } finally {
+                clearTimeout(timer);
+            }
+
+            // 回退到 AMap JS SDK 的 Geocoder
+            if (window.AMap && amapMap) {
+                try {
+                    AMap.plugin('AMap.Geocoder', function() {
+                        const geocoder = new AMap.Geocoder({ city: '全国' });
+                        geocoder.getLocation(query, function(status, result) {
+                            if (status === 'complete' && result.geocodes && result.geocodes.length) {
+                                const loc = result.geocodes[0].location;
+                                placeAMarker(loc.lng, loc.lat);
+                                showToast('找到 ' + result.geocodes.length + ' 条结果：' + query);
+                            } else {
+                                showToast('未找到地址，请尝试更精确关键词');
+                            }
+                        });
+                    });
+                } catch (err) {
+                    console.warn('Geocoder 调用失败，回退至DOM占位', err);
+                    clearDOMMarkers();
+                    const results = [ [40,45], [60,30], [72,62] ];
+                    results.forEach((pos, i) => setTimeout(() => placeDOMMarker(pos[0], pos[1]), i * 200));
+                    showToast('（模拟）找到 ' + results.length + ' 条结果：' + query);
+                }
+            } else {
+                // 最终回退：模拟位置标注
                 clearDOMMarkers();
                 const results = [ [40,45], [60,30], [72,62] ];
                 results.forEach((pos, i) => setTimeout(() => placeDOMMarker(pos[0], pos[1]), i * 200));
                 showToast('（模拟）找到 ' + results.length + ' 条结果：' + query);
             }
-        } else {
-            // 回退：模拟位置标注
-            clearDOMMarkers();
-            const results = [ [40,45], [60,30], [72,62] ];
-            results.forEach((pos, i) => setTimeout(() => placeDOMMarker(pos[0], pos[1]), i * 200));
-            showToast('（模拟）找到 ' + results.length + ' 条结果：' + query);
-        }
+        };
+
+        tryProxyThenAmap();
     }
 
     if (searchBtn && searchInput) {
