@@ -296,6 +296,59 @@ document.addEventListener('DOMContentLoaded', setupMapInteractions);
 console.log('丰图科技官方网站已加载');
 console.log('AI数据中心已启动 🤖');
 
+// AI 助手交互
+document.addEventListener('DOMContentLoaded', function() {
+    const assistantBtn = document.getElementById('assistantBtn');
+    const aiPanel = document.getElementById('aiPanel');
+    const aiSend = document.getElementById('aiSend');
+    const aiInput = document.getElementById('aiInput');
+    const aiMessages = document.getElementById('aiMessages');
+
+    if (!assistantBtn) return;
+
+    assistantBtn.addEventListener('click', () => {
+        if (aiPanel.style.display === 'none') {
+            aiPanel.style.display = 'block';
+        } else {
+            aiPanel.style.display = 'none';
+        }
+    });
+
+    function appendMessage(text, who='bot'){
+        const div = document.createElement('div');
+        div.className = 'msg ' + who;
+        div.textContent = text;
+        aiMessages.appendChild(div);
+        aiMessages.scrollTop = aiMessages.scrollHeight;
+    }
+
+    aiSend.addEventListener('click', () => {
+        const q = aiInput.value.trim();
+        if (!q) return;
+        appendMessage(q, 'user');
+        aiInput.value = '';
+        // 简单规则：如果包含“北京”或“总部”则触发地图关键词
+        setTimeout(() => {
+            if (/北京|总部/.test(q)){
+                appendMessage('正在为您在地图上定位：北京总部（示例）');
+                // 清旧标记并放置新的示例标注
+                const canvas = document.getElementById('mapCanvas');
+                if (canvas){
+                    const old = canvas.querySelectorAll('.map-marker');
+                    old.forEach(o=>o.remove());
+                    const marker = document.createElement('div');
+                    marker.className = 'map-marker';
+                    marker.style.left = '32%';
+                    marker.style.top = '46%';
+                    canvas.appendChild(marker);
+                }
+            } else {
+                appendMessage('已收到请求：“' + q + '”。（示例回复，尚未接入后端AI）');
+            }
+        }, 700);
+    });
+});
+
 // 地图搜索 - 简单模拟交互（占位实现）
 document.addEventListener('DOMContentLoaded', function() {
     const searchBtn = document.getElementById('mapSearchBtn');
