@@ -1,4 +1,16 @@
 {
+  "name": "fengtuvision-web",
+  "version": "1.0.0",
+  "description": "丰图科技企业门户网站",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "proxy": "AMAP_REST_KEY=${AMAP_REST_KEY:-YOUR_KEY} node server/index.js",
+    "dev": "npm install && npm start"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "dependencies": {
     "dotenv": "^17.2.4"
   }

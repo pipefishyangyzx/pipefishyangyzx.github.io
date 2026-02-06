@@ -446,11 +446,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!query) { showToast('请输入搜索关键词'); return; }
 
         const tryProxyThenAmap = async () => {
-            // 尝试调用相对路径代理（适用于在本地或已部署带代理的环境）
+            // 从 meta[name="amap-proxy-url"] 获取代理 URL，或使用相对路径 /api/geocode
+            const proxyMeta = document.querySelector('meta[name="amap-proxy-url"]');
+            let proxyUrl = (proxyMeta && proxyMeta.content && proxyMeta.content.trim()) || '/api/geocode';
+            if (proxyUrl && !proxyUrl.endsWith('/api/geocode')) {
+                proxyUrl = proxyUrl.replace(/\/$/, '') + '/api/geocode';
+            }
+            
+            // 尝试调用代理（支持相对路径或绝对 URL）
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), 3000);
             try {
-                const proxyResp = await fetch('/api/geocode?address=' + encodeURIComponent(query), { signal: controller.signal });
+                const proxyResp = await fetch(proxyUrl + '?address=' + encodeURIComponent(query), { signal: controller.signal });
                 clearTimeout(timer);
                 if (proxyResp.ok) {
                     const text = await proxyResp.text();
