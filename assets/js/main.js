@@ -406,11 +406,33 @@ document.addEventListener('DOMContentLoaded', function() {
     function initAMapIfAvailable() {
         try {
             if (window.AMap) {
-                amapMap = new AMap.Map('mapCanvas', {
-                    center: [116.397428, 39.90923],
-                    zoom: 11,
-                    viewMode: '2D'
-                });
+                // 如果已经初始化过则跳过
+                if (!amapMap) {
+                    amapMap = new AMap.Map('mapCanvas', {
+                        center: [116.397428, 39.90923],
+                        zoom: 11,
+                        viewMode: '2D'
+                    });
+                    console.log('AMap 初始化完成');
+                }
+            } else {
+                // 若 AMap 未加载，稍后重试
+                console.log('AMap 未就绪，等待加载...');
+                const retry = setInterval(() => {
+                    if (window.AMap) {
+                        clearInterval(retry);
+                        try {
+                            amapMap = new AMap.Map('mapCanvas', {
+                                center: [116.397428, 39.90923],
+                                zoom: 11,
+                                viewMode: '2D'
+                            });
+                            console.log('AMap 延迟初始化完成');
+                        } catch (err) {
+                            console.warn('AMap 延迟初始化失败', err);
+                        }
+                    }
+                }, 300);
             }
         } catch (e) {
             console.warn('AMap init failed or not available', e);
@@ -424,16 +446,28 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!query) { showToast('请输入搜索关键词'); return; }
 
         if (window.AMap && amapMap) {
-            const geocoder = new AMap.Geocoder({ city: '全国' });
-            geocoder.getLocation(query, function(status, result) {
-                if (status === 'complete' && result.geocodes && result.geocodes.length) {
-                    const loc = result.geocodes[0].location;
-                    placeAMarker(loc.lng, loc.lat);
-                    showToast('找到 ' + result.geocodes.length + ' 条结果：' + query);
-                } else {
-                    showToast('未找到地址，请尝试更精确关键词');
-                }
-            });
+            // 使用 AMap.plugin 确保 Geocoder 可用
+            try {
+                AMap.plugin('AMap.Geocoder', function() {
+                    const geocoder = new AMap.Geocoder({ city: '全国' });
+                    geocoder.getLocation(query, function(status, result) {
+                        if (status === 'complete' && result.geocodes && result.geocodes.length) {
+                            const loc = result.geocodes[0].location;
+                            placeAMarker(loc.lng, loc.lat);
+                            showToast('找到 ' + result.geocodes.length + ' 条结果：' + query);
+                        } else {
+                            showToast('未找到地址，请尝试更精确关键词');
+                        }
+                    });
+                });
+            } catch (err) {
+                console.warn('Geocoder 调用失败，回退至DOM占位', err);
+                // 回退到DOM标注
+                clearDOMMarkers();
+                const results = [ [40,45], [60,30], [72,62] ];
+                results.forEach((pos, i) => setTimeout(() => placeDOMMarker(pos[0], pos[1]), i * 200));
+                showToast('（模拟）找到 ' + results.length + ' 条结果：' + query);
+            }
         } else {
             // 回退：模拟位置标注
             clearDOMMarkers();
